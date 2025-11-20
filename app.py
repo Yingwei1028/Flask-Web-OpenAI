@@ -12,7 +12,7 @@ import openai
 
 app = Flask(__name__)
 
-# --- 配置 ---
+# --- Configuration ---
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
@@ -20,7 +20,7 @@ client = openai.OpenAI(api_key=OPENAI_API_KEY)
 ANILIST_URL = "https://graphql.anilist.co"
 
 def get_home_data():
-    # 一次請求抓取兩組數據：trending (趨勢) 和 popular (正在連載的熱門)
+    # Fetch both datasets in a single request: trending and popular (currently airing)
     query = '''
     query {
       trending: Page(page: 1, perPage: 5) {
@@ -57,13 +57,12 @@ def get_home_data():
             print(data['errors'])
             return None, None
         
-        # 返回两组列表
         return data['data']['trending']['media'], data['data']['popular']['media']
     except Exception as e:
         print(f"AniList API Error: {e}")
         return [], []
 
-# --- 輔助函數：調用 OpenAI 獲取推薦標題 ---
+# --- Call OpenAI to get recommended titles ---
 def get_ai_recommendations(user_input):
     prompt = f"""
     User request: "{user_input}"
@@ -76,7 +75,7 @@ def get_ai_recommendations(user_input):
     
     try:
         response = client.chat.completions.create(
-            model="gpt-4o", # 或者 gpt-4o
+            model="gpt-4o", 
             messages=[
                 {"role": "system", "content": "You are an expert anime recommender."},
                 {"role": "user", "content": prompt}
@@ -90,7 +89,7 @@ def get_ai_recommendations(user_input):
         print(f"OpenAI Error: {e}")
         return []
 
-# --- 輔助函數：調用 AniList GraphQL 獲取詳情 ---
+# --- Fetch anime details from AniList GraphQL ---
 def fetch_anime_details(title):
     query = '''
     query ($search: String) {
@@ -124,16 +123,16 @@ def fetch_anime_details(title):
         print(f"AniList API Error: {e}")
         return None
 
-# --- 路由 ---
+# --- route ---
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    recommendations = [] # 搜索結果
-    trending_list = []   # 首頁趨勢
-    popular_list = []    # 首頁熱門
+    recommendations = [] # Search results
+    trending_list = []   # Homepage trending
+    popular_list = []    # Homepage popular
     user_input = ""
     
     if request.method == 'POST':
-        # --- 用戶點擊了搜索 ---
+        # --- User clicked search ---
         user_input = request.form.get('user_input')
         if user_input:
             titles = get_ai_recommendations(user_input)
@@ -142,8 +141,8 @@ def index():
                 if details:
                     recommendations.append(details)
     else:
-        # --- 用戶剛進入首頁 (GET 請求) ---
-        # 獲取首頁推薦數據
+        # --- User just entered homepage (GET request) ---
+        # Fetch homepage recommendation data
         trending_list, popular_list = get_home_data()
     
     return render_template(
