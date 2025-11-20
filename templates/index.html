@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Anime Recommender</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #fffafa; }
+        h1 { text-align: center; color: #333; }
+        .search-box { display: flex; gap: 10px; margin-bottom: 30px; }
+        input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        button { padding: 10px 20px; background: #02a9ff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #008ecc; }
+        
+        .results { 
+            display: grid; /* 啟用網格佈局 */
+            /* 這一行最重要：自動填滿，每個卡片最小 200px，空間夠就並排 */
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
+            gap: 20px; /* 卡片之間的間距 */
+            width: 100%; /* 確保容器佔滿寬度 */
+        }
+        .card { 
+            background: white; 
+            border-radius: 8px; 
+            overflow: hidden; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
+            transition: transform 0.2s; 
+            /* 這裡不需要寫 width，因為上面 results 的 grid 會自動控制寬度 */
+        }
+        .card:hover { transform: translateY(-5px); }
+        .card img { width: 100%; height: 300px; object-fit: cover; }
+        .card-content { padding: 15px; }
+        .card-title { font-weight: bold; margin-bottom: 5px; font-size: 1.1em; }
+        .score { color: #2ecc71; font-weight: bold; font-size: 0.9em; }
+        .desc { font-size: 0.8em; color: #666; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-top: 10px;}
+        a { text-decoration: none; color: inherit; }
+    </style>
+</head>
+<body>
+
+    <h1>🤖 AI 動漫推薦助手</h1>
+
+    <form class="search-box" method="POST">
+        <input type="text" name="user_input" placeholder="例如：我想看一部關於時間旅行的感人動漫..." value="{{ last_input }}" required>
+        <button type="submit">推薦</button>
+    </form>
+
+    <div> 
+        {% if recommendations %}
+            <h2 style="text-align: center; margin-bottom: 20px;">🔍 推薦结果</h2>
+            
+            <div class="results">
+                {% for anime in recommendations %}
+                    <a href="{{ anime.siteUrl }}" target="_blank">
+                        <div class="card">
+                            <img src="{{ anime.coverImage.large }}" alt="{{ anime.title.romaji }}">
+                            <div class="card-content">
+                                <div class="card-title">{{ anime.title.english or anime.title.romaji }}</div>
+                                <div class="score">Score: {{ anime.averageScore or 'N/A' }}%</div>
+                                <div class="desc" style="font-size: 0.8em; color: #666; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+                                    {{ anime.description | safe }}
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="/" style="text-decoration: none; color: #02a9ff; font-weight: bold;">← 返回首页</a>
+            </div>
+
+        {% else %}
+
+            <h2 style="margin-left: 10px; border-left: 5px solid #ff6b6b; padding-left: 10px; color: #333;">🔥 Trending Now</h2>
+            
+            <div class="results">
+                {% for anime in trending %}
+                <a href="{{ anime.siteUrl }}" target="_blank">
+                    <div class="card">
+                        <img src="{{ anime.coverImage.large }}">
+                        <div class="card-content">
+                            <div class="card-title">{{ anime.title.english or anime.title.romaji }}</div>
+                            <div class="score" style="color: #ff6b6b;">Score: {{ anime.averageScore or 'N/A' }}%</div>
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+
+            <br><br> 
+
+            <h2 style="margin-left: 10px; border-left: 5px solid #02a9ff; padding-left: 10px; color: #333;">🌟 Popular Currently</h2>
+            
+            <div class="results">
+                {% for anime in popular %}
+                <a href="{{ anime.siteUrl }}" target="_blank">
+                    <div class="card">
+                        <img src="{{ anime.coverImage.large }}">
+                        <div class="card-content">
+                            <div class="card-title">{{ anime.title.english or anime.title.romaji }}</div>
+                            <div class="score" style="color: #02a9ff;">Score: {{ anime.averageScore or 'N/A' }}%</div>
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+
+        {% endif %}
+    </div> </body>
+</html>
