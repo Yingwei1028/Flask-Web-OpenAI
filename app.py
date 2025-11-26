@@ -7,8 +7,6 @@ import requests
 import json
 from dotenv import load_dotenv 
 load_dotenv() 
-import os
-import openai
 
 app = Flask(__name__)
 
@@ -43,6 +41,14 @@ def get_home_data():
       }
       coverImage {
         large
+      }
+      bannerImage
+      genres
+      episodes
+      status
+      trailer {
+        id
+        site
       }
       averageScore
       siteUrl
@@ -102,6 +108,14 @@ def fetch_anime_details(title):
         }
         coverImage {
           large
+        }
+        bannerImage
+        genres
+        episodes
+        status
+        trailer {
+          id
+          site
         }
         description
         averageScore

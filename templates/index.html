@@ -29,20 +29,19 @@
 
         <div class="results">
             {% for anime in recommendations %}
-            <a href="{{ anime.siteUrl }}" target="_blank">
-                <div class="card">
-                    <div class="card-image-wrapper">
-                        <img src="{{ anime.coverImage.large }}" alt="{{ anime.title.romaji }}">
-                    </div>
-                    <div class="score-badge">{{ anime.averageScore or 'N/A' }}%</div>
-                    <div class="card-content">
-                        <div class="card-title">{{ anime.title.english or anime.title.romaji }}</div>
-                        <div class="desc">
-                            {{ anime.description | safe }}
-                        </div>
+            <div class="card" data-index="{{ loop.index0 }}" data-type="recommendations"
+                onclick="openModalFromElement(this)">
+                <div class="card-image-wrapper">
+                    <img src="{{ anime.coverImage.large }}" alt="{{ anime.title.romaji }}">
+                </div>
+                <div class="score-badge">{{ anime.averageScore or 'N/A' }}%</div>
+                <div class="card-content">
+                    <div class="card-title">{{ anime.title.english or anime.title.romaji }}</div>
+                    <div class="desc">
+                        {{ anime.description | safe }}
                     </div>
                 </div>
-            </a>
+            </div>
             {% endfor %}
         </div>
 
@@ -56,18 +55,16 @@
 
         <div class="results">
             {% for anime in trending %}
-            <a href="{{ anime.siteUrl }}" target="_blank">
-                <div class="card">
-                    <div class="card-image-wrapper">
-                        <img src="{{ anime.coverImage.large }}" alt="{{ anime.title.romaji }}">
-                    </div>
-                    <div class="score-badge" style="color: #f472b6; border-color: rgba(244, 114, 182, 0.3);">{{
-                        anime.averageScore or 'N/A' }}%</div>
-                    <div class="card-content">
-                        <div class="card-title">{{ anime.title.english or anime.title.romaji }}</div>
-                    </div>
+            <div class="card" data-index="{{ loop.index0 }}" data-type="trending" onclick="openModalFromElement(this)">
+                <div class="card-image-wrapper">
+                    <img src="{{ anime.coverImage.large }}" alt="{{ anime.title.romaji }}">
                 </div>
-            </a>
+                <div class="score-badge" style="color: #f472b6; border-color: rgba(244, 114, 182, 0.3);">{{
+                    anime.averageScore or 'N/A' }}%</div>
+                <div class="card-content">
+                    <div class="card-title">{{ anime.title.english or anime.title.romaji }}</div>
+                </div>
+            </div>
             {% endfor %}
         </div>
 
@@ -75,24 +72,159 @@
 
         <div class="results">
             {% for anime in popular %}
-            <a href="{{ anime.siteUrl }}" target="_blank">
-                <div class="card">
-                    <div class="card-image-wrapper">
-                        <img src="{{ anime.coverImage.large }}" alt="{{ anime.title.romaji }}">
-                    </div>
-                    <div class="score-badge" style="color: #fbbf24; border-color: rgba(251, 191, 36, 0.3);">{{
-                        anime.averageScore or 'N/A' }}%</div>
-                    <div class="card-content">
-                        <div class="card-title">{{ anime.title.english or anime.title.romaji }}</div>
-                    </div>
+            <div class="card" data-index="{{ loop.index0 }}" data-type="popular" onclick="openModalFromElement(this)">
+                <div class="card-image-wrapper">
+                    <img src="{{ anime.coverImage.large }}" alt="{{ anime.title.romaji }}">
                 </div>
-            </a>
+                <div class="score-badge" style="color: #fbbf24; border-color: rgba(251, 191, 36, 0.3);">{{
+                    anime.averageScore or 'N/A' }}%</div>
+                <div class="card-content">
+                    <div class="card-title">{{ anime.title.english or anime.title.romaji }}</div>
+                </div>
+            </div>
             {% endfor %}
         </div>
 
         {% endif %}
     </div>
 
+    <!-- Detail Modal -->
+    <div id="detail-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <div class="modal-header">
+                <img id="modal-banner" src="" alt="Banner">
+                <div class="modal-title-overlay">
+                    <h2 id="modal-title">Anime Title</h2>
+                    <div id="modal-genres" class="genres"></div>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="modal-info-grid">
+                    <div class="info-item">
+                        <span class="label">Episodes</span>
+                        <span id="modal-episodes" class="value">?</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Status</span>
+                        <span id="modal-status" class="value">?</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Score</span>
+                        <span id="modal-score" class="value">?</span>
+                    </div>
+                </div>
+
+                <p id="modal-desc" class="description"></p>
+
+                <div id="trailer-container" class="trailer-container hidden">
+                    <h3>Trailer</h3>
+                    <iframe id="trailer-frame" width="100%" height="315" src="" frameborder="0"
+                        allowfullscreen></iframe>
+                </div>
+
+                <div class="modal-actions">
+                    <a id="modal-link" href="#" target="_blank" class="action-btn">View on AniList <i
+                            class="fas fa-external-link-alt"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="hidden">
+        <div class="spinner"></div>
+        <p>AI is thinking...</p>
+    </div>
+
+    <!-- Data Injection -->
+    <script type="application/json" id="data-recommendations">
+        {{ recommendations | tojson | safe }}
+    </script>
+    <script type="application/json" id="data-trending">
+        {{ trending | tojson | safe }}
+    </script>
+    <script type="application/json" id="data-popular">
+        {{ popular | tojson | safe }}
+    </script>
+
+    <script>
+        // Parse data from script tags
+        const animeData = {
+            recommendations: JSON.parse(document.getElementById('data-recommendations').textContent || '[]'),
+            trending: JSON.parse(document.getElementById('data-trending').textContent || '[]'),
+            popular: JSON.parse(document.getElementById('data-popular').textContent || '[]')
+        };
+
+        function openModalFromElement(element) {
+            const index = element.dataset.index;
+            const type = element.dataset.type;
+            const data = animeData[type][index];
+            if (data) {
+                openModal(data);
+            }
+        }
+
+        const searchForm = document.querySelector('.search-box');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const modal = document.getElementById('detail-modal');
+        const trailerFrame = document.getElementById('trailer-frame');
+
+        if (searchForm) {
+            searchForm.addEventListener('submit', function () {
+                loadingOverlay.classList.remove('hidden');
+            });
+        }
+
+        function openModal(data) {
+            document.getElementById('modal-title').textContent = data.title.english || data.title.romaji;
+            document.getElementById('modal-banner').src = data.bannerImage || data.coverImage.large;
+
+            // Genres
+            const genresContainer = document.getElementById('modal-genres');
+            genresContainer.innerHTML = '';
+            if (data.genres) {
+                data.genres.slice(0, 3).forEach(genre => {
+                    const span = document.createElement('span');
+                    span.className = 'genre-tag';
+                    span.textContent = genre;
+                    genresContainer.appendChild(span);
+                });
+            }
+
+            document.getElementById('modal-episodes').textContent = data.episodes || '?';
+            document.getElementById('modal-status').textContent = data.status || 'Unknown';
+            document.getElementById('modal-score').textContent = (data.averageScore || 'N/A') + '%';
+            document.getElementById('modal-desc').innerHTML = data.description || 'No description available.';
+            document.getElementById('modal-link').href = data.siteUrl;
+
+            // Trailer
+            const trailerContainer = document.getElementById('trailer-container');
+            if (data.trailer && data.trailer.site === 'youtube') {
+                trailerFrame.src = `https://www.youtube.com/embed/${data.trailer.id}`;
+                trailerContainer.classList.remove('hidden');
+            } else {
+                trailerFrame.src = '';
+                trailerContainer.classList.add('hidden');
+            }
+
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        }
+
+        function closeModal() {
+            modal.classList.add('hidden');
+            trailerFrame.src = ''; // Stop video
+            document.body.style.overflow = '';
+        }
+
+        // Close on outside click
+        window.onclick = function (event) {
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+    </script>
 </body>
 
 </html>
