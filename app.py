@@ -2,7 +2,7 @@ import os
 os.environ['NO_PROXY'] = '*'
 os.environ['no_proxy'] = '*'
 from flask import Flask, render_template, request
-import openai
+import google.generativeai as genai
 import requests
 import json
 from dotenv import load_dotenv 
@@ -11,8 +11,9 @@ load_dotenv()
 app = Flask(__name__)
 
 # --- Configuration ---
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-client = openai.OpenAI(api_key=OPENAI_API_KEY)
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+genai.configure(api_key=GEMINI_API_KEY)
+model = genai.GenerativeModel("gemini-2.5-flash", generation_config={"response_mime_type": "application/json"})
 
 # AniList GraphQL URL
 ANILIST_URL = "https://graphql.anilist.co"
@@ -69,8 +70,10 @@ def get_home_data():
         return [], []
 
 # --- Call OpenAI to get recommended titles ---
+# --- Call Gemini to get recommended titles ---
 def get_ai_recommendations(user_input):
     prompt = f"""
+    You are an expert anime recommender.
     User request: "{user_input}"
     
     Please recommend 3 to 5 anime titles based on the request.
@@ -80,19 +83,11 @@ def get_ai_recommendations(user_input):
     """
     
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o", 
-            messages=[
-                {"role": "system", "content": "You are an expert anime recommender."},
-                {"role": "user", "content": prompt}
-            ],
-            response_format={"type": "json_object"}
-        )
-        content = response.choices[0].message.content
-        data = json.loads(content)
+        response = model.generate_content(prompt)
+        data = json.loads(response.text)
         return data.get("anime_list", [])
     except Exception as e:
-        print(f"OpenAI Error: {e}")
+        print(f"Gemini API Error: {e}")
         return []
 
 # --- Fetch anime details from AniList GraphQL ---
